@@ -1,0 +1,10 @@
+.gradle/
+build/
+local.properties
+.idea/
+*.iml
+*.keystore
+
+# APKs nur im Ordner apk/ (Download-Version)
+*.apk
+!apk/*.apk

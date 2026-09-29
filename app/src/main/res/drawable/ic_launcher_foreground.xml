@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Kartenmarker mit Karfunkel (roter Edelstein) -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <path android:fillColor="#D4A04A"
+        android:pathData="M54,26c-11.6,0 -21,9.4 -21,21c0,15.8 21,35 21,35s21,-19.2 21,-35c0,-11.6 -9.4,-21 -21,-21z" />
+    <path android:fillColor="#000000"
+        android:pathData="M54,33c-7.7,0 -14,6.3 -14,14s6.3,14 14,14s14,-6.3 14,-14s-6.3,-14 -14,-14z" />
+    <path android:fillColor="#C0262D"
+        android:pathData="M54,36l8,6l-3,10h-10l-3,-10z" />
+    <path android:fillColor="#FF6B6B"
+        android:pathData="M54,36l-8,6h8z" />
+</vector>
