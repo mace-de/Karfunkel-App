@@ -16,16 +16,26 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.IOException
+import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 enum class ViewMode { MAP, TABLE }
 
-enum class RangeFilter(val label: String, val days: Long?) {
-    ALL("Alle", null),
-    WEEK("7 Tage", 7),
-    MONTH("30 Tage", 30),
-    QUARTER("3 Monate", 91),
+/**
+ * Zeitraum in ganzen Wochen ab Montag der laufenden Woche: [weeks] = first ..< last.
+ * last == [WEEKS] bedeutet offenes Ende (auch Termine nach dem kommenden Jahr).
+ */
+data class WeekRange(val first: Int, val last: Int) {
+    val isAll: Boolean get() = first == 0 && last == WEEKS
+    val openEnd: Boolean get() = last == WEEKS
+
+    companion object {
+        /** Die Leiste zeigt gut ein Jahr. */
+        const val WEEKS = 53
+        val ALL = WeekRange(0, WEEKS)
+    }
 }
 
 /** Termine an derselben Kartenposition. */
@@ -56,7 +66,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         private set
 
     var viewMode by mutableStateOf(ViewMode.MAP)
-    var range by mutableStateOf(RangeFilter.ALL)
+    var range by mutableStateOf(WeekRange.ALL)
     var query by mutableStateOf("")
     var selection by mutableStateOf<List<Int>>(emptyList())
     var focus by mutableStateOf<FocusRequest?>(null)
@@ -65,15 +75,37 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private var refreshJob: Job? = null
     private var geocodeJob: Job? = null
 
+    /** Montag der laufenden Woche: linker Rand der Zeitleiste. */
+    val rangeOrigin: LocalDate
+        get() = LocalDate.now().with(DayOfWeek.MONDAY)
+
+    /** Erster Tag des gewählten Zeitraums (nie vor heute). */
+    private val rangeFrom: LocalDate
+        get() = maxOf(LocalDate.now(), rangeOrigin.plusWeeks(range.first.toLong()))
+
+    /** Letzter Tag (Sonntag) des gewählten Zeitraums; null bei offenem Ende. */
+    private val rangeTo: LocalDate?
+        get() = if (range.openEnd) null else rangeOrigin.plusWeeks(range.last.toLong()).minusDays(1)
+
+    val rangeLabel: String
+        get() {
+            if (range.isAll) return "Alle Termine"
+            val from = rangeFrom
+            val to = rangeTo ?: return "ab ${from.format(FULL_DATE)}"
+            val fromText = if (from.year == to.year) from.format(SHORT_DATE) else from.format(FULL_DATE)
+            return "$fromText – ${to.format(FULL_DATE)}"
+        }
+
     val visibleEvents: List<Event> by derivedStateOf {
-        val today = LocalDate.now()
-        val limit = range.days?.let { today.plusDays(it) }
+        val all = range.isAll
+        val from = rangeFrom
+        val to = rangeTo
         val words = query.trim().lowercase(Locale.GERMAN).split(Regex("\\s+")).filter { it.isNotEmpty() }
         events.filter { e ->
-            val inRange = limit == null || run {
+            val inRange = all || run {
                 val start = e.start ?: return@run false
                 val last = e.lastDay ?: start
-                !start.isAfter(limit) && !last.isBefore(today)
+                (to == null || !start.isAfter(to)) && !last.isBefore(from)
             }
             inRange && words.all { w -> e.columns.any { (_, v) -> w in v.lowercase(Locale.GERMAN) } }
         }
@@ -180,5 +212,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     companion object {
         private const val STALE_AFTER_MS = 3L * 3600 * 1000
+        private val SHORT_DATE = DateTimeFormatter.ofPattern("dd.MM.")
+        private val FULL_DATE = DateTimeFormatter.ofPattern("dd.MM.yyyy")
     }
 }

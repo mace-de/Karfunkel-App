@@ -15,10 +15,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
@@ -29,8 +27,6 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.NavigationBar
@@ -60,6 +56,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import de.oliverpekel.karfunkel.ui.Black
+import de.oliverpekel.karfunkel.ui.DateRangeBar
 import de.oliverpekel.karfunkel.ui.EventMap
 import de.oliverpekel.karfunkel.ui.EventSheet
 import de.oliverpekel.karfunkel.ui.EventTable
@@ -159,25 +156,22 @@ private fun MainScreen(vm: MainViewModel) {
                     )
                 }
                 Row(
-                    Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    Modifier.padding(start = 4.dp, end = 0.dp, bottom = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    RangeFilter.entries.forEach { r ->
-                        FilterChip(
-                            selected = vm.range == r,
-                            onClick = { vm.range = r },
-                            label = { Text(r.label) },
-                            colors = FilterChipDefaults.filterChipColors(
-                                containerColor = Black,
-                                selectedContainerColor = GoldDim,
-                                selectedLabelColor = TextPrimary,
-                                labelColor = TextSecondary,
-                            ),
-                            border = FilterChipDefaults.filterChipBorder(
-                                enabled = true,
-                                selected = vm.range == r,
-                                borderColor = Hairline,
-                            ),
+                    DateRangeBar(
+                        range = vm.range,
+                        origin = vm.rangeOrigin,
+                        label = vm.rangeLabel,
+                        onChange = { vm.range = it },
+                        modifier = Modifier.weight(1f),
+                    )
+                    // Platz bleibt immer reserviert, damit die Leiste beim Ziehen nicht ihre Breite ändert.
+                    IconButton(onClick = { vm.range = WeekRange.ALL }, enabled = !vm.range.isAll) {
+                        Icon(
+                            Icons.Filled.Close,
+                            contentDescription = "Zeitraum zurücksetzen",
+                            tint = if (vm.range.isAll) Hairline else TextSecondary,
                         )
                     }
                 }
